@@ -25,7 +25,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Login to GitHub Container Registry
-          command: echo $CR_PAT | docker login ghcr.io -u $GHCR_USER --password-stdin
+          command: echo $GHCR_TOKEN | docker login ghcr.io -u $GHCR_USER --password-stdin
       - run:
           name: Build Docker image
           command: docker build -t ghcr.io/$GHCR_USER/karsajobs-ui:latest .
