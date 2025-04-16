@@ -1,5 +1,10 @@
 version: 2.1
 
+executors:
+  golang-executor:
+    docker:
+      - image: cimg/go:1.21
+
 jobs:
   lint-dockerfile:
     docker:
@@ -17,7 +22,15 @@ jobs:
           name: Run hadolint
           command: hadolint Dockerfile
 
-  build-app-karsajobs-ui:
+  test-app:
+    executor: golang-executor
+    steps:
+      - checkout
+      - run:
+          name: Run unit tests
+          command: go test -v -short --count=1 $(go list ./...)
+
+  build-app-karsajobs:
     docker:
       - image: cimg/base:stable
     steps:
@@ -28,16 +41,18 @@ jobs:
           command: echo $CR_PAT | docker login ghcr.io -u $GHCR_USER --password-stdin
       - run:
           name: Build Docker image
-          command: docker build -t ghcr.io/$GHCR_USER/karsajobs-ui:latest .
+          command: docker build -t ghcr.io/$GHCR_USER/karsajobs:latest .
       - run:
           name: Push Docker image
-          command: docker push ghcr.io/$GHCR_USER/karsajobs-ui:latest
+          command: docker push ghcr.io/$GHCR_USER/karsajobs:latest
 
 workflows:
   version: 2
-  karsajobs-ui-ci:
+  karsajobs-ci:
     jobs:
       - lint-dockerfile
-      - build-app-karsajobs-ui:
+      - test-app
+      - build-app-karsajobs:
           requires:
             - lint-dockerfile
+            - test-app
