@@ -1,58 +1,58 @@
-version: 2.1
+version: 2.1 # Versi konfigurasi CircleCI yang digunakan
 
 executors:
-  golang-executor:
+  golang-executor: # Mendefinisikan executor khusus untuk job berbasis Go
     docker:
-      - image: cimg/go:1.21 # Ganti sesuai versi Go kamu
+      - image: cimg/go:1.21 # Menggunakan image Docker Go versi 1.21
 
 jobs:
-  lint-dockerfile:
+  lint-dockerfile: # Job untuk melakukan linting pada Dockerfile
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable # Menggunakan image dasar CircleCI
     steps:
-      - checkout
+      - checkout # Mengambil kode dari repository
       - run:
-          name: Install hadolint
+          name: Install hadolint # Nama step: install hadolint (linter Dockerfile)
           command: |
-            sudo apt-get update && sudo apt-get install -y wget
-            wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
-            chmod +x hadolint
-            sudo mv hadolint /usr/local/bin/
+            sudo apt-get update && sudo apt-get install -y wget # Update package list dan install wget
+            wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 # Download hadolint
+            chmod +x hadolint # Berikan permission executable
+            sudo mv hadolint /usr/local/bin/ # Pindahkan ke path global
       - run:
-          name: Run hadolint
-          command: hadolint Dockerfile
+          name: Run hadolint # Nama step: menjalankan hadolint
+          command: hadolint Dockerfile # Lint Dockerfile
 
-  test-app:
-    executor: golang-executor
+  test-app: # Job untuk menjalankan unit test aplikasi Go
+    executor: golang-executor # Menggunakan executor yang sudah didefinisikan
     steps:
-      - checkout
+      - checkout # Mengambil kode dari repository
       - run:
-          name: Run unit tests
-          command: go test -v -short --count=1 $(go list ./...)
+          name: Run unit tests # Nama step: menjalankan unit test
+          command: go test -v -short --count=1 $(go list ./...) # Perintah untuk menjalankan semua unit test
 
-  build-app-karsajobs:
+  build-app-karsajobs: # Job untuk build dan push Docker image
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable # Menggunakan image dasar CircleCI
     steps:
-      - checkout
-      - setup_remote_docker
+      - checkout # Mengambil kode dari repository
+      - setup_remote_docker # Mengaktifkan remote Docker environment untuk build image
       - run:
-          name: Login to GitHub Container Registry
-          command: echo $GHCR_TOKEN | docker login ghcr.io -u $GHCR_USER --password-stdin
+          name: Login to GitHub Container Registry # Nama step: login ke GHCR
+          command: echo $GHCR_TOKEN | docker login ghcr.io -u $GHCR_USER --password-stdin # Login ke GHCR menggunakan token
       - run:
-          name: Build Docker image
-          command: docker build -t ghcr.io/$GHCR_USER/karsajobs:latest .
+          name: Build Docker image # Nama step: build Docker image
+          command: docker build -t ghcr.io/$GHCR_USER/karsajobs:latest . # Build image dan tag ke GHCR
       - run:
-          name: Push Docker image
-          command: docker push ghcr.io/$GHCR_USER/karsajobs:latest
+          name: Push Docker image # Nama step: push Docker image
+          command: docker push ghcr.io/$GHCR_USER/karsajobs:latest # Push image ke GHCR
 
 workflows:
-  version: 2
-  karsajobs-ci:
+  version: 2 # Versi workflow CircleCI
+  karsajobs-ci: # Nama workflow
     jobs:
-      - lint-dockerfile
-      - test-app
+      - lint-dockerfile # Menjalankan job lint-dockerfile
+      - test-app # Menjalankan job test-app
       - build-app-karsajobs:
           requires:
-            - lint-dockerfile
-            - test-app
+            - lint-dockerfile # build-app-karsajobs hanya dijalankan jika lint-dockerfile sukses
+            - test-app # build-app-karsajobs hanya dijalankan jika test-app sukses
