@@ -1,43 +1,43 @@
-version: 2.1
+version: 2.1 # Versi konfigurasi CircleCI yang digunakan
 
 jobs:
-  lint-dockerfile:
+  lint-dockerfile: # Job untuk melakukan linting pada Dockerfile
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable # Menggunakan image dasar CircleCI
     steps:
-      - checkout
+      - checkout # Mengambil kode dari repository
       - run:
-          name: Install hadolint
+          name: Install hadolint # Nama step: install hadolint (linter Dockerfile)
           command: |
-            sudo apt-get update && sudo apt-get install -y wget
-            wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
-            chmod +x hadolint
-            sudo mv hadolint /usr/local/bin/
+            sudo apt-get update && sudo apt-get install -y wget # Update package list & install wget
+            wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 # Download hadolint
+            chmod +x hadolint # Berikan permission executable
+            sudo mv hadolint /usr/local/bin/ # Pindahkan ke path global
       - run:
-          name: Run hadolint
-          command: hadolint Dockerfile
+          name: Run hadolint # Nama step: menjalankan hadolint
+          command: hadolint Dockerfile # Lint Dockerfile
 
-  build-app-karsajobs-ui:
+  build-app-karsajobs-ui: # Job untuk build dan push Docker image UI
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable # Menggunakan image dasar CircleCI
     steps:
-      - checkout
-      - setup_remote_docker
+      - checkout # Mengambil kode dari repository
+      - setup_remote_docker # Mengaktifkan remote Docker environment untuk build image
       - run:
-          name: Login to GitHub Container Registry
-          command: echo $GHCR_TOKEN | docker login ghcr.io -u $GHCR_USER --password-stdin
+          name: Login to GitHub Container Registry # Nama step: login ke GHCR
+          command: echo $GHCR_TOKEN | docker login ghcr.io -u $GHCR_USER --password-stdin # Login ke GHCR menggunakan token
       - run:
-          name: Build Docker image
-          command: docker build -t ghcr.io/$GHCR_USER/karsajobs-ui:latest .
+          name: Build Docker image # Nama step: build Docker image
+          command: docker build -t ghcr.io/$GHCR_USER/karsajobs-ui:latest . # Build image dan tag ke GHCR
       - run:
-          name: Push Docker image
-          command: docker push ghcr.io/$GHCR_USER/karsajobs-ui:latest
+          name: Push Docker image # Nama step: push Docker image
+          command: docker push ghcr.io/$GHCR_USER/karsajobs-ui:latest # Push image ke GHCR
 
 workflows:
-  version: 2
-  karsajobs-ui-ci:
+  version: 2 # Versi workflow CircleCI
+  karsajobs-ui-ci: # Nama workflow
     jobs:
-      - lint-dockerfile
+      - lint-dockerfile # Menjalankan job lint-dockerfile
       - build-app-karsajobs-ui:
           requires:
-            - lint-dockerfile
+            - lint-dockerfile # build-app-karsajobs-ui hanya dijalankan jika lint-dockerfile sukses
